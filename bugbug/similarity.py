@@ -369,6 +369,21 @@ class Word2VecWmdSimilarity(Word2VecSimilarityBase):
 
         return emd(d1, d2, distance_matrix)
 
+    def removeStopwords(self):
+
+        # Some special stop words should be remoed like Firefox and Mozilla so they arent repeated or dealth with in an unessicarry way
+        specialWordsList = ['Firefox', 'Mozilla', "BugBug", ""]
+
+        nltk.download('punkt')
+
+        stop_words = set(stopwords.words('english')) + specialWordsList
+
+        tokenized_corpus = word_tokenize(self.corpus)
+
+        for word in tokenized_corpus:
+            if word not in stop_words:
+                self.corpus.append(word)
+
     def calculate_all_distances(self, words):
         return np.array(
             1.0
