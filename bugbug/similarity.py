@@ -292,6 +292,29 @@ class Word2VecSimilarityBase(BaseSimilarity):
         self.w2vmodel = Word2Vec(self.corpus, size=100, min_count=5)
         self.w2vmodel.init_sims(replace=True)
 
+    def _init__(self, filePath, cut_off=0.2, cleanup_urls=True, nltk_tokenizer=False):
+        super().__init__(cleanup_urls=cleanup_urls, nltk_tokenizer=nltk_tokenizer)
+        self.corpus = []
+        self.bug_ids = []
+        self.cut_off = cut_off
+        for bug in bugzilla.get_bugs():
+            self.corpus.append(self.text_preprocess(self.get_text(bug)))
+            self.bug_ids.append(bug["id"])
+
+        indexes = list(range(len(self.corpus)))
+        random.shuffle(indexes)
+        self.corpus = [self.corpus[idx] for idx in indexes]
+        self.bug_ids = [self.bug_ids[idx] for idx in indexes]
+
+        self.w2vmodel = Word2Vec(self.corpus, size=100, min_count=5)
+        self.w2vmodel.init_sims(replace=True)
+        self.w2vmodel.build_vocab(self.corpus)
+        total_examples = self.w2vmodel.corpus_count
+        model = KeyedVectors.load_word2vec_format(filePath, binary=False)
+        self.w2vmodel.build_vocab([list(model.vocab.keys())], update=True)
+        self.w2vmodel.intersect_word2vec_format(filePath, binary=False, lockf=1.0)
+        self.w2vmodel.train(self.corpus, total_examples=total_examples, epochs=self.w2vmodel.iter)
+
 
 class Word2VecWmdSimilarity(Word2VecSimilarityBase):
     def __init__(self, cut_off=0.2, cleanup_urls=True, nltk_tokenizer=False):
