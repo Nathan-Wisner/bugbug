@@ -625,6 +625,36 @@ class LDASimilarity(BaseSimilarity):
     def get_distance(self, query1, query2):
         raise NotImplementedError
 
+class Doc2VecSimilarityBase():
+    def __init__(self, cut_off=0.2, cleanup_urls=True, nltk_tokenizer=False):
+        super.__init__(cleanup_urls, nltk_tokenizer)
+        self.corpus = []
+        self.bug_ids = []
+        self.model = None
+        self.cut_off = cut_off
+
+        for bug in bugzilla.get_bugs():
+            self.corpus.append(self.text_preprocess(self.get_text(bug)))
+            self.bug_ids.append(bug["id"])
+
+        indexes = list(range(len(self.corpus)))
+        random.shuffle(indexes)
+        self.corpus = [self.corpus[idx] for idx in indexes]
+        self.bug_ids = [self.bug_ids[idx] for idx in indexes]
+
+        self.doc2vecModel = Doc2Vec(self.corpus, 100, 5)
+        self.doc2vecModel.init_sims(True)
+
+    def createModel(self, corpus):
+        self.model = Doc2Vec(20, 0.0025, 1, 1, 1)
+        self.model.build_vocab(corpus)
+        self.model.train(corpus, self.model.corpus_count, self.model.iter)
+        self.model.save("Doc.model")
+
+    def loadModel(self, input):
+        model = Doc2Vec.load("Doc.model")
+        return model.docvecs.most_similar(input)
+
 
 model_name_to_class = {
     "lsi": LSISimilarity,
