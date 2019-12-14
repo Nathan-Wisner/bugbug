@@ -790,3 +790,121 @@ def test_calculate_experiences():
     assert commits["commit6"].touched_prev_90_days_component_sum == 2
     assert commits["commit6"].touched_prev_90_days_component_max == 2
     assert commits["commit6"].touched_prev_90_days_component_min == 2
+
+def test_empty_get_commits():
+    assert repository.get_commits() == []
+def test_long_get_commits():
+    commits = {
+        "commit1": repository.Commit(
+            node="commit1",
+            author="author1",
+            desc="commit1",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2019, 1, 1),
+            bug_id=123,
+            backedoutby="",
+            author_email="author1@mozilla.org",
+            reviewers=("reviewer1", "reviewer2"),
+        ).set_files(["dom/file1.cpp", "apps/file1.jsm"], {}),
+        "commitbackedout": repository.Commit(
+            node="commitbackedout",
+            author="author1",
+            desc="commitbackedout",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2019, 1, 1),
+            bug_id=123,
+            backedoutby="commitbackout",
+            author_email="author1@mozilla.org",
+            reviewers=("reviewer1", "reviewer2"),
+        ).set_files(["dom/file1.cpp", "apps/file1.jsm"], {}),
+        "commit2": repository.Commit(
+            node="commit2",
+            author="author2",
+            desc="commit2",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2019, 1, 1),
+            bug_id=123,
+            backedoutby="",
+            author_email="author2@mozilla.org",
+            reviewers=("reviewer1",),
+        ).set_files(["dom/file1.cpp"], {}),
+        "commit2refactoring": repository.Commit(
+            node="commit2refactoring",
+            author="author2",
+            desc="commit2refactoring",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2019, 1, 1),
+            bug_id=123,
+            backedoutby="",
+            author_email="author2@mozilla.org",
+            reviewers=("reviewer1",),
+            ignored=True,
+        ).set_files(["dom/file1.cpp"], {}),
+        "commit3": repository.Commit(
+            node="commit3",
+            author="author1",
+            desc="commit3",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2019, 1, 1),
+            bug_id=123,
+            backedoutby="",
+            author_email="author1@mozilla.org",
+            reviewers=("reviewer2",),
+        ).set_files(["dom/file2.cpp", "apps/file1.jsm"], {}),
+        "commit4": repository.Commit(
+            node="commit4",
+            author="author2",
+            desc="commit4",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2020, 1, 1),
+            bug_id=123,
+            backedoutby="",
+            author_email="author2@mozilla.org",
+            reviewers=("reviewer1", "reviewer2"),
+        ).set_files(["dom/file1.cpp", "apps/file2.jsm"], {}),
+        "commit5": repository.Commit(
+            node="commit5",
+            author="author3",
+            desc="commit5",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2020, 1, 2),
+            bug_id=123,
+            backedoutby="",
+            author_email="author3@mozilla.org",
+            reviewers=("reviewer3",),
+        ).set_files(["dom/file1.cpp"], {"dom/file1.cpp": "dom/file1copied.cpp"}),
+        "commit6": repository.Commit(
+            node="commit6",
+            author="author3",
+            desc="commit6",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2020, 1, 3),
+            bug_id=123,
+            backedoutby="",
+            author_email="author3@mozilla.org",
+            reviewers=("reviewer3",),
+        ).set_files(["dom/file1.cpp", "dom/file1copied.cpp"], {}),
+    }
+
+    repository.calculate_experiences(commits.values(), datetime(2019, 1, 1))
+
+    assert repository.get_commits() != []
+    assert repository.get_commits()["commitbackedout"].seniority_author == 0
+
+def test_incorrect_get_commits():
+    commits = {
+        "commit1": repository.Commit(
+            node="commit1",
+            author="author1",
+            desc="commit1",
+            date=datetime(2019, 1, 1),
+            pushdate=datetime(2019, 1, 1),
+            bug_id=123,
+            backedoutby="",
+            author_email="author1@mozilla.org",
+            reviewers=("reviewer1", "reviewer2"),
+        ).set_files(["dom/file1.cpp", "apps/file1.jsm"], {})}
+
+    repository.calculate_experiences(commits.values(), datetime(2019, 1, 1))
+
+    assert repository.get_commits()["Nothing"] == []
